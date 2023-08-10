@@ -13,6 +13,8 @@ switch_status_t redis_plus_profile_create(redis_plus_profile_t **new_profile, ch
     profile->connection = NULL;
     profile->ignore_connect_fail = ignore_connect_fail;
     profile->ignore_error = ignore_error;
+    switch_thread_rwlock_create(&profile->pipeline_lock, pool);
+    switch_queue_create(&profile->active_requests, 2000, pool);
 
     switch_core_hash_insert(mod_redis_plus_globals.profiles, name, (void *) profile);
 
@@ -30,10 +32,12 @@ switch_status_t redis_plus_profile_destroy(redis_plus_profile_t **old_profile){
         profile = *old_profile;
         *old_profile = NULL;
     }
+
+    redis_plus_pipeline_threads_stop(profile);
     profile->connection->redis_cluster = NULL;
     profile->connection->master_redis = NULL;
     profile->connection->slave_redis = NULL;
-    profile->connection->pipeline = NULL;
+    //profile->connection->pipeline = NULL;
 
     switch_core_hash_delete(mod_redis_plus_globals.profiles, profile->name);
     switch_core_destroy_memory_pool(&(profile->pool));
@@ -115,6 +119,8 @@ switch_status_t redis_plus_profile_connection_add(redis_plus_profile_t *profile,
        new_conn->slave_redis = std::unique_ptr<Redis>(slave_redis);
     }
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redis_plus: adding conn[%s,%d], pool size = %d\n", new_conn->host, new_conn->port, pool_size);
+    profile->connection = new_conn;
+    redis_plus_pipeline_thread_start(profile);
 done:
     switch_safe_free(input);
     return SWITCH_STATUS_SUCCESS;
@@ -122,7 +128,7 @@ done:
 
 switch_status_t redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t *session, char **response, const char *data) {
     redis_plus_connection_t *conn = profile->connection;
-    OptionalString option_resp;
+    ReplyUPtr resp;
     if (conn) {
         std::vector<std::string> commands;
         bool flag = true;
@@ -137,20 +143,40 @@ switch_status_t redis_plus_profile_execute(redis_plus_profile_t *profile, switch
             commands.push_back(std::string(data));
             data = command;
         }
-
-        if (conn->redis_type == 0) {
-            option_resp = conn->master_redis->command<OptionalString>(commands.begin(), commands.end());
-        } else if (conn->redis_type == 1) {
-            option_resp = conn->redis_cluster->command<OptionalString>(commands.begin(), commands.end());
-        } else if (conn->redis_type == 2) {
-            if (strstr(data, "get") != nullptr) {
-                conn->master_redis->command<OptionalString>(commands.begin(), commands.end());
-            } else {
-                option_resp = conn->slave_redis->command<OptionalString>(commands.begin(), commands.end());
-            }
-        }
-        *response = strdup(option_resp.value().c_str());
-        return SWITCH_STATUS_SUCCESS;
+	try {
+		if (conn->redis_type == 0) {
+		    resp = conn->master_redis->command(commands.begin(), commands.end());
+		} else if (conn->redis_type == 1) {
+		    resp = conn->redis_cluster->command(commands.begin(), commands.end());
+		} else if (conn->redis_type == 2) {
+		    if (strstr(data, "get") != nullptr) {
+			conn->master_redis->command(commands.begin(), commands.end());
+		    } else {
+			resp = conn->slave_redis->command(commands.begin(), commands.end());
+		    }
+		}
+		if (reply::is_integer(*resp)){
+                    auto int_resp = reply::parse<long long>(*resp);
+                    *response = switch_mprintf("%lld", int_resp);
+		} else if (reply::is_string(*resp)) {
+	            auto option_resp = reply::parse<OptionalString>(*resp);
+		    *response = strdup(option_resp.value().c_str());
+		} else if (reply::is_double(*resp)) {
+                    auto double_resp = reply::parse<double>(*resp);
+                    *response = switch_mprintf("%f", double_resp);
+		} else if (reply::is_bool(*resp)) {
+                    auto bool_resp = reply::parse<long long>(*resp);
+                    *response = switch_mprintf("%lld", bool_resp);
+		} else {
+                    auto option_resp = reply::parse<OptionalString>(*resp);
+                    *response = strdup(option_resp.value().c_str());
+                }
+		return SWITCH_STATUS_SUCCESS;
+	} catch(const ReplyError &e) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "redis_plus can't get reply: %s", e.what());
+	} catch(const std::exception &e) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "redis_plus unkown error: %s", e.what());
+	}
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redis_plus: can't find redis connection\n");
     }

@@ -1,5 +1,7 @@
 #include "mod_redis_plus.h"
 
+mod_redis_plus_global_t mod_redis_plus_globals;
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_redis_plus_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_redis_plus_shutdown);
 SWITCH_MODULE_DEFINITION(mod_redis_plus, mod_redis_plus_load, mod_redis_plus_shutdown, NULL);
@@ -391,8 +393,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_redis_plus_load)
 
     SWITCH_ADD_LIMIT(limit_interface, "redis_plus", redis_plus_limit_incr, redis_plus_limit_release, redis_plus_limit_usage,
                      redis_plus_limit_reset, redis_plus_limit_status, redis_plus_limit_interval_reset);
-    SWITCH_ADD_APP(app_interface, "redis_plus_raw", "redis_plus_raw", "redis_plus_raw", raw_app, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
-    SWITCH_ADD_API(api_interface, "redis_plus_raw", "redis_plus_raw", raw_api, "");
+    SWITCH_ADD_APP(app_interface, "hiredis_raw", "hiredis_raw", "hiredis_raw", raw_app, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+    SWITCH_ADD_API(api_interface, "hiredis_raw", "hiredis_raw", raw_api, "");
 
     return SWITCH_STATUS_SUCCESS;
 }

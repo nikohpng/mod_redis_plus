@@ -1,2 +1,9 @@
 cmake-build-debug-remote-host/
 .idea/
+*.lo
+*.la
+*.o
+Makefile
+Makefile.in
+.deps/
+.libs/
