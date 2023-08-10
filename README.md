@@ -2,7 +2,7 @@
 FreeSWITCH connect to redis with cluster and sentinel model
 
 ## Dependency
-Before installing, you need to install [hiredis](https://github.com/sewenew/redis-plus-plus/tree/fb020fa1f6e116738cda2dfcbb064a5320664b4a#install-hiredis) and [redis-plus-plus](https://github.com/sewenew/redis-plus-plus/tree/fb020fa1f6e116738cda2dfcbb064a5320664b4a#install-redis-plus-plus)
+Before installing, you need to install [hiredis](https://github.com/sewenew/redis-plus-plus/tree/master#install-hiredis) and [redis-plus-plus](https://github.com/sewenew/redis-plus-plus/tree/master#install-redis-plus-plus)
 
 when you done it, you need run this to check it:
 ```shell

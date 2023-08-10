@@ -1,7 +1,6 @@
 <configuration name="redis_plus.conf" description="mod_redis_plus">
   <profiles>
     <profile name="default">
-     
 	<connection name="primary">
 	  <param name="hostname" value="10.9.9.89"/>
 	  <param name="password" value="redis"/>	
