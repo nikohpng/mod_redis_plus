@@ -29,3 +29,12 @@ pkg-config --list-all | grep hiredis
 + If everything is ok, you can do `./configure && make && make install`
 + Add mod_redis_plus to freeswitch/conf/autoload/modules.conf.xml
 + Add autoload_conf/redis_plus.conf.xml to freeswitch/conf/autoload_configs
+## Configuration
++ profiles - save multiple profiles
+  + profile - it contain all configuration of a connection
+  + connection - a connection name
+  + hostname - a connection ip address [default: localhost]
+  + password - this connnection password
+  + port - connect to redis port [default: 6379]
+  + redis-type - how connect to redis server [1: single 2: cluster 3: sentinel]
+  + ignore-connect-fail - ignore connection fail in profile
