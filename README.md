@@ -21,6 +21,10 @@ pkg-config --list-all | grep hiredis
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_REDIS_PLUS],[false])])
   ```
 + Modify modules.conf in freeswitch source, add `applications/mod_redis_plus`
++ Clone source mod_redis_plus to `src/mod/application/`
+  ```
+  git clone https://github.com/nikohpng/mod_redis_plus ./src/mod/application/
+  ```
 + Run `rebootstrap.sh` or `bootstrap.sh` to rebuild Makefile.in
 + If everything is ok, you can do `./configure && make && make install`
 + Add mod_redis_plus to freeswitch/conf/autoload/modules.conf.xml
