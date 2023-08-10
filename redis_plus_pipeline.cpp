@@ -32,7 +32,7 @@ static void *SWITCH_THREAD_FUNC pipeline_thread(switch_thread_t *thread, void *o
             int idx = 0;
             auto conn = profile->connection;
             int request_count = 1;
-            std::vector<std::string> responses;
+            std::vector<long long> responses;
             QueuedReplies replies;
             redis_plus_request_t *requests = (redis_plus_request_t *)val;
             redis_plus_request_t *cur_request = requests;
@@ -66,10 +66,10 @@ static void *SWITCH_THREAD_FUNC pipeline_thread(switch_thread_t *thread, void *o
                         std::vector<std::string> commands = get_commands(data);
                         if (conn->redis_type == 1) {
                             try{
-                                auto rs = conn->redis_cluster->command<std::string>(commands.begin(), commands.end());
+                                auto rs = conn->redis_cluster->command<long long>(commands.begin(), commands.end());
                                 responses.push_back(rs);
                             }catch(ReplyError e) {
-                                responses.push_back("");
+                                responses.push_back(-1);
                             }
                         } else {
                             conn->pipeline.command(commands.begin(), commands.end());
@@ -98,9 +98,9 @@ static void *SWITCH_THREAD_FUNC pipeline_thread(switch_thread_t *thread, void *o
                 redis_plus_request_t *next_request = cur_request->next; /* done here to prevent race with waiter */
                 std::string response;
                 if (conn->redis_type == 1) {
-                    response = responses.at(idx++);
+                    response = switch_mprintf("%lld",responses.at(idx++));
                 } else {
-                    response = replies.get<std::string>(idx++);
+                    response = switch_mprintf("%lld",replies.get<long long>(idx++));
                 }
                 if (!response.empty()) {
                     *cur_request->response = strdup(response.c_str());
