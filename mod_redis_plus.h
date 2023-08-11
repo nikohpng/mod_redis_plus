@@ -69,6 +69,7 @@ typedef struct redis_plus_limit_pvt_s {
 } redis_plus_limit_pvt_t;
 
 switch_status_t mod_redis_plus_do_config(void);
+std::vector<std::string> get_commands(char *data);
 switch_status_t redis_plus_profile_create(redis_plus_profile_t **new_profile, char *name, uint8_t ignore_connect_fail, uint8_t ignore_error);
 switch_status_t redis_plus_profile_destroy(redis_plus_profile_t **old_profile);
 switch_status_t redis_plus_profile_connection_add(redis_plus_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms,

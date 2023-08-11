@@ -4,6 +4,8 @@ FreeSWITCH connect to redis with cluster and sentinel model
 ## Dependency
 Before installing, you need to install [hiredis](https://github.com/sewenew/redis-plus-plus/tree/master#install-hiredis) and [redis-plus-plus](https://github.com/sewenew/redis-plus-plus/tree/master#install-redis-plus-plus)
 
+  > redis-plus-plus must compile by c++11
+
 when you done it, you need run this to check it:
 ```shell
 pkg-config --list-all | grep redis++
@@ -33,8 +35,9 @@ pkg-config --list-all | grep hiredis
 + profiles - save multiple profiles
   + profile - it contain all configuration of a connection
   + connection - a connection name
-  + hostname - a connection ip address [default: localhost]
+  + hostname - a connection ip address, `localhost` by default
   + password - this connnection password
-  + port - connect to redis port [default: 6379]
-  + redis-type - how connect to redis server [1: single 2: cluster 3: sentinel]
+  + port - connect to redis port, `6379` by default
+  + redis-type - how connect to redis server, [1: single 2: cluster 3: sentinel]
   + ignore-connect-fail - ignore connection fail in profile
+  + max_pipelined_requests - pipline request, `20` by default

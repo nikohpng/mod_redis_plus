@@ -1,5 +1,21 @@
 #include "mod_redis_plus.h"
 
+std::vector<std::string> get_commands(char *data) {
+    bool flag = true;
+    std::vector<std::string> commands;
+    while(flag) {
+        char *command = NULL;
+        if ((command = strchr(data, ' '))) {
+            *command = '\0';
+            command++;
+        } else {
+            flag = false;
+        }
+        commands.push_back(std::string(data));
+        data = command;
+    }
+    return commands;
+}
 
 switch_status_t mod_redis_plus_do_config()
 {
@@ -16,6 +32,7 @@ switch_status_t mod_redis_plus_do_config()
             redis_plus_profile_t *new_profile = NULL;
             uint8_t ignore_connect_fail = 0;
             uint8_t ignore_error = 0;
+            int max_pipelined_requests = 0;
             char *name = (char *) switch_xml_attr_soft(profile, "name");
 
             // Load params
@@ -26,8 +43,14 @@ switch_status_t mod_redis_plus_do_config()
                         ignore_connect_fail = switch_true(switch_xml_attr_soft(param, "value"));
                     } else if ( !strncmp(var, "ignore-error", 12) ) {
                         ignore_error = switch_true(switch_xml_attr_soft(param, "value"));
+                    } else if ( !strncmp(var, "max-pipelined-requests", 22) ) {
+                        max_pipelined_requests = atoi(switch_xml_attr_soft(param, "value"));
                     }
                 }
+            }
+
+            if (max_pipelined_requests <= 0) {
+                max_pipelined_requests = 20;
             }
 
             if ( redis_plus_profile_create(&new_profile, name, ignore_connect_fail, ignore_error) == SWITCH_STATUS_SUCCESS ) {

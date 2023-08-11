@@ -1,24 +1,5 @@
 #include "mod_redis_plus.h"
 
-
-std::vector<std::string> get_commands(char *data) {
-    bool flag = true;
-    std::vector<std::string> commands;
-    while(flag) {
-        char *command = NULL;
-        if ((command = strchr(data, ' '))) {
-            *command = '\0';
-            command++;
-        } else {
-            flag = false;
-        }
-        commands.push_back(std::string(data));
-        data = command;
-    }
-    return commands;
-}
-
-
 static void *SWITCH_THREAD_FUNC pipeline_thread(switch_thread_t *thread, void *obj)
 {
     redis_plus_profile_t *profile = (redis_plus_profile_t *)obj;
@@ -55,8 +36,7 @@ static void *SWITCH_THREAD_FUNC pipeline_thread(switch_thread_t *thread, void *o
                 }
                 conn->is_init = false;
             }
-            // do
-            // hiredis_profile_execute_requests(profile, NULL, requests);
+
             try{
                 cur_request = requests;
                 while ( cur_request ) {
