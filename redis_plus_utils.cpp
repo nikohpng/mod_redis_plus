@@ -53,7 +53,7 @@ switch_status_t mod_redis_plus_do_config()
                 max_pipelined_requests = 20;
             }
 
-            if ( redis_plus_profile_create(&new_profile, name, ignore_connect_fail, ignore_error) == SWITCH_STATUS_SUCCESS ) {
+            if ( redis_plus_profile_create(&new_profile, name, ignore_connect_fail, ignore_error, max_pipelined_requests) == SWITCH_STATUS_SUCCESS ) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
             } else {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);

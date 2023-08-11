@@ -139,14 +139,15 @@ redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t 
     redis_plus_connection_t *conn = profile->connection;
     ReplyUPtr resp;
     if (conn) {
-        std::vector <std::string> commands = get_commands(data);;
+        std::vector <std::string> commands = get_commands((char*)data);
         try {
             if (conn->redis_type == 0) {
                 resp = conn->master_redis->command(commands.begin(), commands.end());
             } else if (conn->redis_type == 1) {
                 resp = conn->redis_cluster->command(commands.begin(), commands.end());
             } else if (conn->redis_type == 2) {
-                if (strstr(data, "get") != nullptr) {
+                if (strstr(data, "GET") != nullptr || strstr(data, "EXISTS")
+                || strstr(data, "get") != nullptr || strstr(data, "exists")) {
                     resp = conn->slave_redis->command(commands.begin(), commands.end());
                 } else {
                     resp = conn->master_redis->command(commands.begin(), commands.end());
@@ -158,12 +159,14 @@ redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t 
             } else if (reply::is_string(*resp)) {
                 auto option_resp = reply::parse<OptionalString>(*resp);
                 *response = strdup(option_resp.value().c_str());
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
             } else if (reply::is_double(*resp)) {
                 auto double_resp = reply::parse<double>(*resp);
                 *response = switch_mprintf("%f", double_resp);
             } else if (reply::is_bool(*resp)) {
                 auto bool_resp = reply::parse<long long>(*resp);
                 *response = switch_mprintf("%lld", bool_resp);
+#endif
             } else {
                 auto option_resp = reply::parse<OptionalString>(*resp);
                 *response = strdup(option_resp.value().c_str());
