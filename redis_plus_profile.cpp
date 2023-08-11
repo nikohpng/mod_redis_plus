@@ -51,8 +51,8 @@ switch_status_t redis_plus_profile_destroy(redis_plus_profile_t **old_profile) {
 
 switch_status_t
 redis_plus_profile_connection_add(redis_plus_profile_t *profile, char *host, char *password, uint32_t port,
-                                  uint32_t timeout_ms,
-                                  uint32_t max_connections, uint32_t redis_type, uint32_t pool_size) {
+                                  uint32_t timeout_ms, uint32_t max_connections, uint32_t redis_type,
+                                  uint32_t pool_size, char *master_name, uint32_t sentinel_timeout_ms) {
     redis_plus_connection_t *new_conn = NULL;
     char *input = NULL;
     if (!zstr(host)) {
@@ -79,50 +79,63 @@ redis_plus_profile_connection_add(redis_plus_profile_t *profile, char *host, cha
     }
 
     ConnectionOptions opts;
-    opts.host = new_conn->host;
-    opts.port = new_conn->port;
+    if (redis_type != 2) {
+        opts.host = new_conn->host;
+        opts.port = new_conn->port;
+    }
     opts.password = new_conn->password;
-    opts.socket_timeout = std::chrono::milliseconds(new_conn->timeout_us);
+    opts.connect_timeout = std::chrono::milliseconds(new_conn->timeout_us);   // Required.
+    opts.socket_timeout = std::chrono::milliseconds(new_conn->timeout_us);    // Required.
 
     ConnectionPoolOptions pool_opts;
     pool_opts.size = 3;
 
-    if (redis_type == 0) {
-        auto redis = new Redis(opts, pool_opts);
-        new_conn->master_redis = std::unique_ptr<Redis>(redis);
-    } else if (redis_type == 1) {
-        auto redis_cluster = new RedisCluster(opts, pool_opts);
-        new_conn->redis_cluster = std::unique_ptr<RedisCluster>(redis_cluster);
-    } else if (redis_type == 2) {
-        // read hosts
-        char *sentinel_host = NULL;
-        bool flag = true;
-        SentinelOptions sentinel_opts;
-        while (flag) {
-            char *host = NULL, *port = NULL;
-            if ((sentinel_host = strchr(input, ','))) {
-                *sentinel_host = '\0';
-                sentinel_host++;
-            } else {
-                flag = false;
+    try {
+        if (redis_type == 0) {
+            auto redis = new Redis(opts, pool_opts);
+            new_conn->master_redis = std::unique_ptr<Redis>(redis);
+        } else if (redis_type == 1) {
+            auto redis_cluster = new RedisCluster(opts, pool_opts);
+            new_conn->redis_cluster = std::unique_ptr<RedisCluster>(redis_cluster);
+        } else if (redis_type == 2) {
+            // read hosts
+            char *sentinel_host = NULL;
+            bool flag = true;
+            SentinelOptions sentinel_opts;
+            while (flag) {
+                char *host = input, *port = NULL, *tmp = NULL;
+                if ((sentinel_host = strchr(input, ','))) {
+                    *sentinel_host = '\0';
+                    sentinel_host++;
+                } else {
+                    flag = false;
+                }
+
+                if ((tmp = strchr(input, ':'))) {
+                    *tmp = '\0';
+                    port = ++tmp;
+                    input = sentinel_host;
+                    sentinel_opts.nodes.push_back(std::make_pair<std::string, int>(std::string(host), atoi(port)));
+                }
+
+            }
+        
+            if (master_name == nullptr) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "redis_plus: sentinel type need master_name!");
+                goto done;
             }
 
-            if ((host = strchr(input, ':'))) {
-                *host = '\0';
-                port = host++;
-                input = sentinel_host;
-                sentinel_opts.nodes.push_back(std::make_pair<std::string, int>(std::string(host), atoi(port)));
-            }
-
+            sentinel_opts.connect_timeout = std::chrono::milliseconds(200);
+            sentinel_opts.socket_timeout = std::chrono::milliseconds(200);
+            auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
+            auto master_redis = new Redis(sentinel, std::string(master_name), Role::MASTER, opts, pool_opts);
+            auto slave_redis = new Redis(sentinel, std::string(master_name), Role::SLAVE, opts, pool_opts);
+            new_conn->master_redis = std::unique_ptr<Redis>(master_redis);
+            new_conn->slave_redis = std::unique_ptr<Redis>(slave_redis);
         }
-
-        sentinel_opts.connect_timeout = std::chrono::milliseconds(200);
-        sentinel_opts.socket_timeout = std::chrono::milliseconds(200);
-        auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
-        auto master_redis = new Redis(sentinel, std::string("master"), Role::MASTER, opts, pool_opts);
-        auto slave_redis = new Redis(sentinel, std::string("slave"), Role::MASTER, opts, pool_opts);
-        new_conn->master_redis = std::unique_ptr<Redis>(master_redis);
-        new_conn->slave_redis = std::unique_ptr<Redis>(slave_redis);
+    }catch(std::exception &e) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "redis_plus can't create connection: %s", e.what());
+        goto done;
     }
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redis_plus: adding conn[%s,%d], pool size = %d\n",
                       new_conn->host, new_conn->port, pool_size);

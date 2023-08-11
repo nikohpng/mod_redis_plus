@@ -73,7 +73,7 @@ std::vector<std::string> get_commands(char *data);
 switch_status_t redis_plus_profile_create(redis_plus_profile_t **new_profile, char *name, uint8_t ignore_connect_fail, uint8_t ignore_error, int max_pipelined_requests);
 switch_status_t redis_plus_profile_destroy(redis_plus_profile_t **old_profile);
 switch_status_t redis_plus_profile_connection_add(redis_plus_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms,
-                                                  uint32_t max_connections, uint32_t redis_type, uint32_t pool_size);
+                                                  uint32_t max_connections, uint32_t redis_type, uint32_t pool_size, char *master_name, uint32_t sentinel_timeout_ms);
 switch_status_t redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t *session, char **response, const char *data);
 
 void redis_plus_pipeline_thread_start(redis_plus_profile_t *profile);

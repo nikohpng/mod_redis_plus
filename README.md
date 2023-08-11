@@ -43,5 +43,8 @@ pkg-config --list-all | grep hiredis
   + password - this connnection password
   + port - connect to redis port, `6379` by default
   + redis-type - how connect to redis server, [1: single 2: cluster 3: sentinel]
+  + master-name - when sentinel type, you need fill it
+  + sentinel-timeout-ms - sentinel connection and socket timeout, `200` by default
+  + timeout-ms - redis connection and socket timeout, `100` by default
   + ignore-connect-fail - ignore connection fail in profile
   + max_pipelined_requests - pipline request, `20` by default

@@ -61,8 +61,9 @@ switch_status_t mod_redis_plus_do_config()
 
             /* Add connection to profile */
             if ( (connection = switch_xml_child(profile, "connection")) != NULL) {
-                char *host = NULL, *password = NULL;
-                uint32_t port = 0, timeout_ms = 0, max_connections = 0, redis_type = 0, pool_size = 0, sync_flag = 0;
+                char *host = NULL, *password = NULL, master_name = NULL;
+                uint32_t port = 0, timeout_ms = 0, max_connections = 0,
+                redis_type = 0, pool_size = 0, sync_flag = 0, sentinel_timeout_ms;
 
                 for (param = switch_xml_child(connection, "param"); param; param = param->next) {
                     char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -73,6 +74,8 @@ switch_status_t mod_redis_plus_do_config()
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "hiredis: adding conn[%u == %s]\n", port, switch_xml_attr_soft(param, "value"));
                     } else if ( !strncmp(var, "timeout-ms", 10) || !strncmp(var, "timeout_ms", 10) ) {
                         timeout_ms = atoi(switch_xml_attr_soft(param, "value"));
+                    } else if ( !strncmp(var, "sentinel-timeout-ms", 19) || !strncmp(var, "sentinel_timeout_ms", 19) ) {
+                        sentinel_timeout_ms = atoi(switch_xml_attr_soft(param, "value"));
                     } else if ( !strncmp(var, "password", 8) ) {
                         password = (char *) switch_xml_attr_soft(param, "value");
                     } else if ( !strncmp(var, "max-connections", 15) ) {
@@ -81,10 +84,20 @@ switch_status_t mod_redis_plus_do_config()
                         redis_type = atoi(switch_xml_attr_soft(param, "value"));
                     } else if ( !strncmp(var, "pool-size", 9)) {
                         pool_size = atoi(switch_xml_attr_soft(param, "value"));
+                    } else if ( !strncmp(var, "master-name", 11)) {
+                        master_name = (char *) switch_xml_attr_soft(param, "value");
                     }
                 }
 
-                if ( redis_plus_profile_connection_add(new_profile, host, password, port, timeout_ms, max_connections, redis_type, pool_size) == SWITCH_STATUS_SUCCESS) {
+                if (timeout_ms <= 0) {
+                    timeout_ms = 100;
+                }
+                if (sentinel_timeout_ms <= 0) {
+                    sentinel_timeout_ms = 200;
+                }
+
+                if ( redis_plus_profile_connection_add(new_profile, host, password, port, timeout_ms, max_connections,
+                                                       redis_type, pool_size, master_name) == SWITCH_STATUS_SUCCESS) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
                 } else {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);

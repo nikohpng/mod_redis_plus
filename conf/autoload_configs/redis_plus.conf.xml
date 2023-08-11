@@ -6,11 +6,14 @@
 	  <param name="password" value="redis"/>
 	  <param name="port" value="7001"/>
 	  <param name="redis-type" value="1"/>
+      <!--<param name="master-name" value="mymaster"/>-->
+      <!--<param name="sentinel-timeout-ms" value="200"/>-->
+      <!--<param name="timeout-ms" value="100"/>-->
 	</connection>
-      <params>
-		<param name="ignore-connect-fail" value="true"/>
-		<!--<param name="max_pipelined_requests" value="20"/>-->
-      </params>
+    <params>
+	  <param name="ignore-connect-fail" value="true"/>
+	  <!--<param name="max_pipelined_requests" value="20"/>-->
+    </params>
     </profile>
   </profiles>
 </configuration>
