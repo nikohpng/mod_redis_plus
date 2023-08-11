@@ -125,8 +125,8 @@ redis_plus_profile_connection_add(redis_plus_profile_t *profile, char *host, cha
                 goto done;
             }
 
-            sentinel_opts.connect_timeout = std::chrono::milliseconds(200);
-            sentinel_opts.socket_timeout = std::chrono::milliseconds(200);
+            sentinel_opts.connect_timeout = std::chrono::milliseconds(sentinel_timeout_ms);
+            sentinel_opts.socket_timeout = std::chrono::milliseconds(sentinel_timeout_ms);
             auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
             auto master_redis = new Redis(sentinel, std::string(master_name), Role::MASTER, opts, pool_opts);
             auto slave_redis = new Redis(sentinel, std::string(master_name), Role::SLAVE, opts, pool_opts);
