@@ -61,9 +61,9 @@ switch_status_t mod_redis_plus_do_config()
 
             /* Add connection to profile */
             if ( (connection = switch_xml_child(profile, "connection")) != NULL) {
-                char *host = NULL, *password = NULL, master_name = NULL;
+                char *host = NULL, *password = NULL, *master_name = NULL;
                 uint32_t port = 0, timeout_ms = 0, max_connections = 0,
-                redis_type = 0, pool_size = 0, sync_flag = 0, sentinel_timeout_ms;
+                redis_type = 0, pool_size = 0, sync_flag = 0, sentinel_timeout_ms = 0;
 
                 for (param = switch_xml_child(connection, "param"); param; param = param->next) {
                     char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -97,7 +97,7 @@ switch_status_t mod_redis_plus_do_config()
                 }
 
                 if ( redis_plus_profile_connection_add(new_profile, host, password, port, timeout_ms, max_connections,
-                                                       redis_type, pool_size, master_name) == SWITCH_STATUS_SUCCESS) {
+                                                       redis_type, pool_size, master_name, sentinel_timeout_ms) == SWITCH_STATUS_SUCCESS) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
                 } else {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);
