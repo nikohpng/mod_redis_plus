@@ -1,8 +1,8 @@
 #include "mod_redis_plus.h"
 
 std::vector<std::string> get_commands(char *data) {
-    bool flag = true;
     std::vector<std::string> commands;
+    bool flag = data != NULL && strlen(data) > 0;
     while(flag) {
         char *command = NULL;
         if ((command = strchr(data, ' '))) {

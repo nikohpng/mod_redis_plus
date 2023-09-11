@@ -159,6 +159,11 @@ redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t 
             } else if (conn->redis_type == 1) {
                 resp = conn->redis_cluster->command(commands.begin(), commands.end());
             } else if (conn->redis_type == 2) {
+                if (data == NULL || strlen(data) <= 0) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redis_plus: error command\n");
+                    *response = switch_mprintf("%lld", -1);
+                    return SWITCH_STATUS_GENERR;
+                }
                 if (strstr(data, "GET") != nullptr || strstr(data, "EXISTS")
                 || strstr(data, "get") != nullptr || strstr(data, "exists")) {
                     resp = conn->slave_redis->command(commands.begin(), commands.end());
@@ -193,5 +198,6 @@ redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t 
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "redis_plus: can't find redis connection\n");
     }
+    *response = switch_mprintf("%lld", -2);
     return SWITCH_STATUS_GENERR;
 }

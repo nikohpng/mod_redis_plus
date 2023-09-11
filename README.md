@@ -39,7 +39,8 @@ pkg-config --list-all | grep hiredis
 + profiles - save multiple profiles
   + profile - it contain all configuration of a connection
   + connection - a connection name
-  + hostname - a connection ip address, `localhost` by default
+  + hostname - a connection ip address, `localhost` by default.
+    + if it is sentinel, need like this `192.168.1.24:28001,192.168.1.25:28002`
   + password - this connnection password
   + port - connect to redis port, `6379` by default
   + redis-type - how connect to redis server, [1: single 2: cluster 3: sentinel]
