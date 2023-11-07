@@ -166,7 +166,12 @@ redis_plus_profile_execute(redis_plus_profile_t *profile, switch_core_session_t 
                 }
                 if (strstr(data, "GET") != nullptr || strstr(data, "EXISTS")
                 || strstr(data, "get") != nullptr || strstr(data, "exists")) {
-                    resp = conn->slave_redis->command(commands.begin(), commands.end());
+                    try {
+                        resp = conn->slave_redis->command(commands.begin(), commands.end());
+                    } catch (const std::exception &e) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "redis_plus slave error: %s", e.what());
+                        resp = conn->master_redis->command(commands.begin(), commands.end());
+                    }
                 } else {
                     resp = conn->master_redis->command(commands.begin(), commands.end());
                 }
